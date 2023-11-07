@@ -1,0 +1,41 @@
+version: '3.7'
+services:
+  webserver:
+    build: ./webserver
+    image: nginx:2.0
+    container_name: webserver
+    networks:
+      test:
+        ipv4_address: 172.18.0.2
+    restart: always
+    ports:
+      - "8080:80"
+  appserver:
+    build: ./appserver
+    image: tomcat:2.0
+    container_name: appserver
+    networks:
+      test:
+        ipv4_address: 172.18.0.3
+    restart: always
+  dbserver:
+    container_name: dbserver
+    networks:
+      test:
+        ipv4_address: 172.18.0.4
+    image: mariadb:latest
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: qwer
+      MARIADB_DATABASE: sample
+networks:
+  test:
+    name: test
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
+          gateway: 172.18.0.1
+    
