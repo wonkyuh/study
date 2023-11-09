@@ -4,8 +4,8 @@
 yum update -y && yum install -y net-tools iputils-ping vim procps yum-utils git wget expect
 
 # 환경변수 설정
-HOSTIP=`ifconfig | grep -A 1 ens | tail -1 | awk '{print $2}'`
-HOSTIFACE=`ifconfig | grep ens | cut -d ":" -f1`
+HOSTIP=$(ifconfig | grep -A 1 ens | tail -1 | awk '{print $2}')
+HOSTIFACE=$(ifconfig | grep ens | cut -d ":" -f1)
 master=192.168.88.10
 node1=192.168.88.20
 node2=192.168.88.30
@@ -18,42 +18,20 @@ if [ $HOSTIP == $master ]; then
         hostnamectl set-hostname master
 elif [ $HOSTIP == $node1 ]; then
         hostnamectl set-hostname node1
-else [ $HOSTIP == $node2 ]
+else
+        [ $HOSTIP == $node2 ]
         hostnamectl set-hostname node2
 fi
 
 echo "$master master
 $node1 node1
-$node2 node2" >> /etc/hosts
-
-        # 키 생성을 위한 expect 스크립트 준비
-        #echo '#!/bin/bash/expect' > /root/keygen.exp
-        #echo "set timeout 30
-        #spawn ssh-keygen -t rsa
-        ##expect "Enter file in which to save the key (/root/.ssh/id_rsa):" {send "\n"}
-        #expect "Enter passphrase (empty for no passphrase):" {send "\n"}
-        #expect "Enter same passphrase again:" {send "\n"}
-        #interact" >> /root/keygen.exp
-
-        # 키 생성
-        #expect -f /root/keygen.exp
-        #ssh-keygen -t rsa
-
-        # 키 배포를 위한 expect 스크립트 준비
-        #echo '#!/bin/bash/expect' > /root/keycopy.exp
-        #echo "set timeout 30
-        #spawn ssh-copy-id -i ./.ssh/id_rsa.pub -p 22 root@$node1
-        #expect "Are you sure you want to continue connecting (yes/no)? " {send "yes"}
-        #interact" >> /root/keycopy.exp
-
-        #ssh-copy-id -i ./.ssh/id_rsa.pub -p 22 root@$node1
-        #ssh-copy-id -i ./.ssh/id_rsa.pub -p 22 root@$node2
+$node2 node2" >>/etc/hosts
 
 # 컨테이너 내부 패킷 제어 설정
 echo "
 	net.bridge.bridge-nf-call-iptables = 1
 	net.bridge.bridge-nf-call-ip6tables = 1
-	net.ipv4.ip_forward = 1 " >> /etc/sysctl.conf
+	net.ipv4.ip_forward = 1 " >>/etc/sysctl.conf
 
 # SWAP 메모리 비활성화
 sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
@@ -77,7 +55,7 @@ docker-compose version
 touch /etc/docker/daemon.json
 echo "{
     \"exec-opts\": [\"native.cgroupdriver=systemd\"]
-}" >> /etc/docker/daemon.json
+}" >>/etc/docker/daemon.json
 systemctl daemon-reload
 systemctl restart docker
 
@@ -90,7 +68,7 @@ enabled=1
 gpgcheck=0
 repo_gpgcheck=0
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >> /etc/yum.repos.d/kubernetes.repo
+       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >>/etc/yum.repos.d/kubernetes.repo
 yum install -y kubelet-1.19.16-0.x86_64 kubectl-1.19.16-0.x86_64 kubeadm-1.19.16-0.x86_64
 
 # 쿠버네티스 데몬 실행
@@ -117,11 +95,11 @@ firewall-cmd --permanent --add-masquerade
 firewall-cmd --reload
 
 # 클러스터 구성을 위한 초기화 작업 수행
-kubeadm init --apiserver-advertise-address=$HOSTIP --pod-network-cidr=10.244.0.0/16 > /root/K8sInitInfo
+kubeadm init --apiserver-advertise-address=$HOSTIP --pod-network-cidr=10.244.0.0/16 >/root/K8sInitInfo
 
 # kubeadm init 접속 정보 스크립트 생성
-echo '#!/bin/bash' > /root/kubeadm.sh
-cat /root/K8sInitInfo | tail -2 >> /root/kubeadm.sh
+echo '#!/bin/bash' >/root/kubeadm.sh
+cat /root/K8sInitInfo | tail -2 >>/root/kubeadm.sh
 
 # kubectl 명령어 설정
 mkdir -p $HOME/.kube

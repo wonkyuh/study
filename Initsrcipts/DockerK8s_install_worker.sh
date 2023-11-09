@@ -4,8 +4,8 @@
 yum update -y && yum install -y net-tools iputils-ping vim procps yum-utils git wget expect
 
 # 환경변수 설정
-HOSTIP=`ifconfig | grep -A 1 ens | tail -1 | awk '{print $2}'`
-HOSTIFACE=`ifconfig | grep ens | cut -d ":" -f1`
+HOSTIP=$(ifconfig | grep -A 1 ens | tail -1 | awk '{print $2}')
+HOSTIFACE=$(ifconfig | grep ens | cut -d ":" -f1)
 master=192.168.88.10
 node1=192.168.88.20
 node2=192.168.88.30
@@ -18,19 +18,20 @@ if [ $HOSTIP == $master ]; then
         hostnamectl set-hostname master
 elif [ $HOSTIP == $node1 ]; then
         hostnamectl set-hostname node1
-else [ $HOSTIP == $node2 ]
+else
+        [ $HOSTIP == $node2 ]
         hostnamectl set-hostname node2
 fi
 
 echo "$master master
 $node1 node1
-$node2 node2" >> /etc/hosts
+$node2 node2" >>/etc/hosts
 
 # 컨테이너 내부 패킷 제어 설정
 echo "
 	net.bridge.bridge-nf-call-iptables = 1
 	net.bridge.bridge-nf-call-ip6tables = 1
-	net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+	net.ipv4.ip_forward = 1" >>/etc/sysctl.conf
 
 # SWAP 메모리 비활성화
 sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
@@ -54,7 +55,7 @@ systemctl enable docker
 touch /etc/docker/daemon.json
 echo "{
     \"exec-opts\": [\"native.cgroupdriver=systemd\"]
-}" >> /etc/docker/daemon.json
+}" >>/etc/docker/daemon.json
 systemctl daemon-reload
 systemctl restart docker
 
@@ -67,7 +68,7 @@ enabled=1
 gpgcheck=0
 repo_gpgcheck=0
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >> /etc/yum.repos.d/kubernetes.repo
+       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >>/etc/yum.repos.d/kubernetes.repo
 yum install -y kubelet-1.19.16-0.x86_64 kubectl-1.19.16-0.x86_64 kubeadm-1.19.16-0.x86_64
 
 # 쿠버네티스 데몬 실행
@@ -107,4 +108,4 @@ firewall-cmd --reload
 # Master Node에서 Kubeadm join 접속 정보 가져오기
 scp root@192.168.88.10:/root/kubeadm.sh /root
 chmod 755 /root/kubeadm.sh
-/root/kubeadm.sh > /root/kubeadmResult
+/root/kubeadm.sh >/root/kubeadmResult
