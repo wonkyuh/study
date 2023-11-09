@@ -1,33 +1,36 @@
 #!/bin/bash
 
 # 필요 패키지 설치
-yum update && yum install -y net-tools iputils-ping vim procps yum-utils git wget
+yum update -y && yum install -y net-tools iputils-ping vim procps yum-utils git wget expect
 
 # 환경변수 설정
 HOSTIP=`ifconfig | grep -A 1 ens | tail -1 | awk '{print $2}'`
 HOSTIFACE=`ifconfig | grep ens | cut -d ":" -f1`
+master=192.168.88.10
+node1=192.168.88.20
+node2=192.168.88.30
 
 # SELINUX 설정
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
 
 # Hosts 수정
-if [ $HOSTIP == "192.168.88.10" ]; then
+if [ $HOSTIP == $master ]; then
         hostnamectl set-hostname master
-elif [ $HOSTIP == "192.168.88.20" ]; then
+elif [ $HOSTIP == $node1 ]; then
         hostnamectl set-hostname node1
-else [ $HOSTIP == "192.168.88.30" ]
+else [ $HOSTIP == $node2 ]
         hostnamectl set-hostname node2
 fi
 
-echo "192.168.88.10 master
-192.168.88.20 node1
-192.168.88.30 node2" >> /etc/hosts
+echo "$master master
+$node1 node1
+$node2 node2" >> /etc/hosts
 
 # 컨테이너 내부 패킷 제어 설정
 echo "
 	net.bridge.bridge-nf-call-iptables = 1
 	net.bridge.bridge-nf-call-ip6tables = 1
-	net.ipv4.ip_forward = 1 " >> /etc/sysctl.conf
+	net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
 
 # SWAP 메모리 비활성화
 sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
@@ -42,10 +45,10 @@ systemctl start docker
 systemctl enable docker
 
 # 도커 컴포즈 설치
-curl -SL https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-docker-compose version
+#curl -SL https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+#ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+#chmod +x /usr/local/bin/docker-compose
+#docker-compose version
 
 # 도커 cgroup 드라이브 변경
 touch /etc/docker/daemon.json
@@ -75,9 +78,6 @@ systemctl start kubelet
 firewall-cmd --permanent --add-port=80/tcp
 firewall-cmd --permanent --add-port=443/tcp
 firewall-cmd --permanent --add-port=2376/tcp
-firewall-cmd --permanent --add-port=2379/tcp
-firewall-cmd --permanent --add-port=2380/tcp
-firewall-cmd --permanent --add-port=6443/tcp
 firewall-cmd --permanent --add-port=8472/udp
 firewall-cmd --permanent --add-port=9099/tcp
 firewall-cmd --permanent --add-port=10250/tcp
@@ -91,15 +91,20 @@ firewall-cmd --permanent --add-masquerade
 firewall-cmd --reload
 
 # 클러스터 구성을 위한 초기화 작업 수행
-kubeadm init --apiserver-advertise-address=$HOSTIP --pod-network-cidr=10.244.0.0/16 > /root/K8sInitInfo
+#kubeadm init --apiserver-advertise-address=$HOSTIP --pod-network-cidr=10.244.0.0/16 > /root/K8sInitInfo
 
 # kubectl 명령어 설정
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
+#mkdir -p $HOME/.kube
+#sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+#sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 # kube-flannel 다운로드 및 네트워크 인터페이스 정보 추가
-wget https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
-sed -i'' -r -e "/--kube-subnet-mgr/a\        - --iface=$HOSTIFACE" ./kube-flannel.yml
-kubectl apply -f kube-flannel.yml
-systemctl restart kubelet
+#wget https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+#sed -i'' -r -e "/--kube-subnet-mgr/a\        - --iface=$HOSTIFACE" ./kube-flannel.yml
+#kubectl apply -f kube-flannel.yml
+#systemctl restart kubelet
+
+# Master Node에서 Kubeadm join 접속 정보 가져오기
+scp root@192.168.88.10:/root/kubeadm.sh /root
+chmod 755 /root/kubeadm.sh
+/root/kubeadm.sh > /root/kubeadmResult
