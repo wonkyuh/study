@@ -1,0 +1,9 @@
+# epel-release 설치 및 ansible 설치
+yum install -y epel-release ansible
+
+# 인벤토리 설정
+vi /etc/ansible/hosts
+
+# ansible 통신 확인
+ansible all -m ping
+
