@@ -28,8 +28,7 @@ $node1 node1
 $node2 node2" >>/etc/hosts
 
 # 컨테이너 내부 패킷 제어 설정
-echo "
-	net.bridge.bridge-nf-call-iptables = 1
+echo "  net.bridge.bridge-nf-call-iptables = 1
 	net.bridge.bridge-nf-call-ip6tables = 1
 	net.ipv4.ip_forward = 1" >>/etc/sysctl.conf
 
