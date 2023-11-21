@@ -22,7 +22,7 @@ systemctl stop firewalld && systemctl disable firewalld
 [ Master ]
 # SSH 키교환
 ssh-keygen -t rsa
-ssh-copy root@[노드 IP] -i ./.ssh/id_rsa.pub
+ssh-copy-id root@[노드 IP] -i ./.ssh/id_rsa.pub
 ※본인이 마스터노드일 경우 및 모든 노드들과 키교환
 
 # 필요 패키지 설치
@@ -30,10 +30,7 @@ yum install -y ansible python3 libselinux-python3 git
 
 # python2에 관한 심볼릭 링크 모두 제거
 rm /usr/bin/python
-rm /usr/bin/python2
-
 ln -s /usr/bin/python3 /usr/bin/python
-ln -s /usr/bin/python2.7 /usr/bin/python2
 
 # example 이런식으로 세팅됨
 /usr/bin/python -> /usr/bin/python3
@@ -44,10 +41,10 @@ ln -s /usr/bin/python2.7 /usr/bin/python2
 yum은 python2 기반 패키지
 
 vi /usr/bin/yum
-맨위를 /usr/bin/pyhon2로 변경해준다.
+맨위를 /usr/bin/python2로 변경해준다.
 
 vi /usr/libexec/urlgrabber-ext-down
-맨위를 /usr/bin/pyhon2로 변경해준다.
+맨위를 /usr/bin/python2로 변경해준다.
 
 ※ Worker Node 에는 python2로 진행해도 된다는걸 본거 같은데 실험해봐야함.
 
