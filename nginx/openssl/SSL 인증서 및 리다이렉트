@@ -1,0 +1,63 @@
+## SSL 사설 인증서 등록하기
+
+## CA 인증서 생성
+openssl genrsa -out rootCA.key 2048
+openssl req -new -key rootCA.key -out rootCA.csr
+openssl x509 -req -in rootCA.csr -signkey rootCA.key -out rootCA.crt
+
+## 서버 개인키 생성
+openssl genrsa -out server.key 2048
+openssl req -new -key server.key -out server.csr
+openssl x509 -req -in server.csr -signkey server.key -out server.crt
+
+## CA 인증서를 포함하는 서버 인증서 생성
+cat server.crt rootCA.crt > server.pem
+
+## IF 컨테이너 환경이라면
+docker run -it --name webserver -p 80:80 -p 443:443 nginx bash
+
+## IF 컨테이너 환경이라면 컨테이너로 인증서 복사
+# 디렉토리 없으면 미리 만들고 진행
+docker cp server.pem [컨테이너 이름]:/etc/nginx/server.pem
+docker cp server.key [컨테이너 이름]:/etc/nginx/server.key
+
+## Nginx Config
+vi /etc/nginx/nginx.conf or /etc/nginx/conf.d/default.conf
+...
+server {
+    listen      80;
+    ...
+    return  301 https://$host$request_uri; #리다이렉트 설정
+    ...
+}
+
+server {
+    listen       443 ssl;
+    listen       [::]:443 ssl;
+    server_name  localhost;                         # 도메인이 있다면 도메인 명
+    root         /usr/share/nginx/html;
+
+    ssl_certificate "/etc/nginx/server.pem";        # 인증서 경로
+    ssl_certificate_key "/etc/nginx/server.key";    # 인증서 경로
+    ssl_session_cache shared:SSL:1m;
+    ssl_session_timeout  10m;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    include /etc/nginx/default.d/*.conf;
+
+    error_page 404 /404.html;
+        location = /40x.html {
+    }
+
+    error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+    }
+}
+...
+
+# Nginx 구문 체크 및 재시작
+nginx -t
+systemctl restart nginx
+
+
