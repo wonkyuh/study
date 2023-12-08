@@ -1,0 +1,25 @@
+Public Subnet : 192.168.0.0/24
+Private Subnet : 192.168.10.0/24
+
+Sqiud IP : 192.168.0.6
+Test IP : 192.168.10.6
+
+[Squid Server (Public)]
+sudo yum install -y squid
+
+vi /etc/squid/squid.conf
+acl localnet src 192.168.0.0/16         # RFC 1918 local private network (LAN)
+
+acl Safe_ports port 80          # http
+acl Safe_ports port 443         # https
+
+http_port 3128
+
+[Test Server (Private)]
+curl -x squid:3128 https://www.google.com
+# 접속 성공
+# -x : Proxy 옵션
+
+[Squid Server (Public)]
+tail -f /var/log/squid/access.log
+# 로그 확인
