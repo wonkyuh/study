@@ -1,0 +1,22 @@
+apiVersion: # apps/v1
+kind: # ReplicaSet
+metadata: # ReplicaSet 메타데이터 
+  name: # rs-basic
+spec:
+  replicas: 5 # default: 1
+  selector: # 아래 라벨에 매치되는 Pod Template을 찾아 ReplicaSet이 작동됨
+    matchLabels:
+      app: nginx-app # 이 곳과
+  template:
+    metadata:
+      name: nginx-template
+      labels:
+        app: nginx-app # 이 곳이 매칭되면 이 템플릿은 쓴다.
+    spec: # 템플릿의 스펙을 적는다.
+      containers:
+        - name: nginx-con
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ['sh','-c','tail -f /dev/null']
+  
